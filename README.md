@@ -949,23 +949,334 @@ foo 객체에 country 프로퍼티 동적생성
 
 # 5 장 - 실행 컨텍스트와 클로저
 
+#### 실행 컨텍스트
+
+```javascript
+console.log("This is global context");
+
+function ExContext1(){
+    console.log("This is ExContext1");
+};
+
+function ExContext2(){
+    ExContext1();
+    console.log("This is ExContext2");
+};
+
+ExContext2();
+/*
+This is global context
+This is ExContext1
+This is ExContext2
+/*
+```
+
+실행 컨텍스트 스택에는
+
+전역 컨텍스트
+
+전역 컨텍스트 over ExContext2
+
+전역 컨텍스트 over ExContext2 over ExContext1
+
+전역 컨텍스트 over ExContext2 - ExContext1반환
+
+전역 컨텍스트 - ExContext2 반환
+
+전역 컨켁스트 반환
 
 
 
+#### 브라우저 vs Node.js
+
+```javascript
+var a = 10;
+b = 15;
+console.log(window.a);	// 10
+console.log(window.b);	// 15
+```
+
+브라우저에서는 최상위 코드가 곧 전역 코드이다. var로 정의한 변수 a가 전역 객체인 window의 한 프로퍼티로 들어갔다.
 
 
 
+```javascript
+var a = 10;
+b = 15;
+console.log(global.a);	// undefined
+console.log(global.b);	// 15
+```
+
+Node.js에서는 하나의 js파일이 하나의 모듈로 동작하고 최상위에 변수를 선언해도 그 모듈의 지역 변수가 된다. 하지만 var을 사용하지 않을 경우 전역 객체인 global의 한 프로퍼티로 들어간다. 주의, 전역 객체를 오염시키는 원인이 될 수 있음.
 
 
 
+#### 클로저
+
+###### 클로저의 사용 이유.
+
+이처럼 클로저는 <u>현재 상태를 기억하고 이 상태가 변경되어도 최신 상태를 유지해야 하는 상황에 매우 유용</u>하다. 만약 자바스크립트에 클로저라는 기능이 없다면 상태를 유지하기 위해 전역 변수를 사용할 수 밖에 없다. <u>전역 변수는 언제든지 누구나 접근할 수 있고 변경할 수 있기 때문에 많은 부작용을 유발해 오류의 원인이 되므로 사용을 억제해야</u> 한다.
 
 
 
+###### 클로저 설명.
+
+```javascript
+function outerFunc(){
+    var x = 10;	// 자유 변수(Free variable)
+    
+    var innerFunc = function(){	// 함수 전체 => 클로저
+        console.log(x);
+    }
+    
+    return innerFunc;
+}
+var inner = outerFunc();
+
+inner();	// 10
+```
+
+이미 생명 주기가 끝난 외부 함수의 변수를 참조하는 함수를 **클로저** 라고 한다.
+
+클로저로 참조되는 외부 변수를 **자유 변수** 라고 한다.
 
 
 
+간단한 사용 예시 :
+
+```javascript
+function outerFunc(arg1, arg2){
+    var local = 10;	
+    function innerFunc(innerArg){
+        console.log((arg1 + arg2)/(innerArg + local));
+    }
+    return innerFunc;
+}
+var exam1 = outerFunc(2,4)
+exam1(2);	// (2+4)/(2+8)
+```
 
 
 
+### 클로저의 활용
 
+1. #### 전역 변수의 사용 억제
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <p>전역 변수를 사용한 Counting</p>
+  <button id="inclease">+</button>
+  <p id="count">0</p>
+  <script>
+    var incleaseBtn = document.getElementById('inclease');
+    var count = document.getElementById('count');
+
+    // 카운트 상태를 유지하기 위한 전역 변수
+    var counter = 0;
+
+    function increase() {
+      return ++counter;
+    }
+
+    incleaseBtn.onclick = function () {
+      count.innerHTML = increase();
+    };
+  </script>
+</body>
+</html>
+```
+
+위 코드는 잘 동작하지만 오류 발생 가능성 有. 전역 변수 counter의 값이 처음 무조건 0이여야함. increase 함수의 지역 변수로 바꿔야함.
+
+
+
+2. #### 지역 변수의 사용
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <p>지역 변수를 사용한 Counting</p>
+  <button id="inclease">+</button>
+  <p id="count">0</p>
+  <script>
+    var incleaseBtn = document.getElementById('inclease');
+    var count = document.getElementById('count');
+
+    function increase() {
+      // 카운트 상태를 유지하기 위한 지역 변수
+      var counter = 0;
+      return ++counter;
+    }
+
+    incleaseBtn.onclick = function () {
+      count.innerHTML = increase();
+    };
+  </script>
+</body>
+</html>
+```
+
+하지만 increase 함수 호출될때마다 counter를 0으로 초기화하기 때문에 언제나 1료 포기됨. 변경된 이전 상태를 기억하지 못함 => 클로저 사용
+
+
+
+3. #### 클로저 사용
+
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+  <p>클로저를 사용한 Counting</p>
+  <button id="inclease">+</button>
+  <p id="count">0</p>
+  <script>
+    var incleaseBtn = document.getElementById('inclease');
+    var count = document.getElementById('count');
+
+    var increase = (function () {
+      // 카운트 상태를 유지하기 위한 자유 변수
+      var counter = 0;
+      // 클로저를 반환
+      return function () {
+        return ++counter;
+      };
+    }());
+
+    incleaseBtn.onclick = function () {
+      count.innerHTML = increase();
+    };
+  </script>
+</body>
+</html>
+```
+
+변수 increase에는 함수 function(){return ++counter;} 가 할당됨. 이 함수는 자신이 생성됐을 때의 렉시컬 환경(Lexical environment)을 기억하는 클로저. 
+
+
+
+4. #### 클로저 사용 2 - 독립적 렉시컬 환경
+
+```javascript
+function makeCounter(predicate) {
+  // 카운트 상태를 유지하기 위한 자유 변수
+  var counter = 0;
+  // 클로저를 반환
+  return function () {
+    counter = predicate(counter);
+    return counter;
+  };
+}
+
+// 보조 함수
+function increase(n) {
+  return ++n;
+}
+
+// 보조 함수
+function decrease(n) {
+  return --n;
+}
+
+// 함수로 함수를 생성한다.
+// makeCounter 함수는 보조 함수를 인자로 전달받아 함수를 반환한다
+const increaser = makeCounter(increase);
+console.log(increaser()); // 1
+console.log(increaser()); // 2
+
+// increaser 함수와는 별개의 독립된 렉시컬 환경을 갖기 때문에 카운터 상태가 연동하지 않는다.
+const decreaser = makeCounter(decrease);
+console.log(decreaser()); // -1
+console.log(decreaser()); // -2
+```
+
+함수 makeCounter는 보조 함수를 인자로 전달받고 함수를 반환하는 고차 함수이다. 함수 makeCounter가 반환하는 함수는 자신이 생성됐을 때의 렉시컬 환경인 함수 makeCounter의 스코프에 속한 변수 counter을 기억하는 클로저다. 함수 makeCounter는 인자로 전달받은 보조 함수를 합성하여 자신이 반환하는 함수의 동작을 변경할 수 있다. 이때 주의해야 할 것은 함수 makeCounter를 호출해 함수를 반환할 때 반환된 함수는 자신만의 독립된 렉시컬 환경을 갖는다는 것이다. 이는 함수를 호출하면 그때마다 새로운 렉시컬 환경이 생성되기 때문이다. 위 예제에서 변수 increaser와 변수 decreaser에 할당된 함수는 각각 자신만의 독립된 렉시컬 환경을 갖기 때문에 카운트를 유지하기 위한 자유 변수 counter를 공유하지 않아 카운터의 증감이 연동하지 않는다. 따라서 독립된 카운터가 아니라 연동하여 증감이 가능한 카운터를 만들려면 렉시컬 환경을 공유하는 클로저를 만들어야 한다.
+
+
+
+5. #### 정보의 은닉 - 공유하는 렉시컬 환경
+
+```javascript
+function Counter() {
+  // 카운트를 유지하기 위한 자유 변수
+  var counter = 0;
+
+  // 클로저
+  this.increase = function () {
+    return ++counter;
+  };
+
+  // 클로저
+  this.decrease = function () {
+    return --counter;
+  };
+}
+
+const counter = new Counter();
+
+console.log(counter.increase()); // 1
+console.log(counter.decrease()); // 0
+```
+
+생성자 함수 Counter는 increase, decrease 메소드를 갖는 인스턴스를 생성한다. 이 메소드들은 모두 자신이 생성됐을 때의 렉시컬 환경인 생성자 함수 Counter의 스코프에 속한 변수 counter를 기억하는 클로저이며 렉시컬 환경을 공유한다. 생성자 함수가 함수가 생성한 객체의 메소드는 객체의 프로퍼티에만 접근할 수 있는 것이 아니며 자신이 기억하는 렉시컬 환경의 변수에도 접근할 수 있다.
+
+이때 생성자 함수 Counter의 변수 counter는 this에 바인딩된 프로퍼티가 아니라 변수다. counter가 this에 바인딩된 프로퍼티라면 생성자 함수 Counter가 생성한 인스턴스를 통해 외부에서 접근이 가능한 `public` 프로퍼티가 되지만 생성자 함수 Counter 내에서 선언된 변수 counter는 생성자 함수 Counter 외부에서 접근할 수 없다. 하지만 생성자 함수 Counter가 생성한 인스턴스의 메소드인 increase, decrease는 클로저이기 때문에 자신이 생성됐을 때의 렉시컬 환경인 생성자 함수 Counter의 변수 counter에 접근할 수 있다. 이러한 클로저의 특징을 사용해 클래스 기반 언어의 `private` 키워드를 흉내낼 수 있다.
+
+
+
+6. #### 자주 발생하는 실수
+
+```javascript
+var arr = [];
+
+for (var i = 0; i < 5; i++) {
+    arr[i] = function () {
+        return i;
+  };
+}
+
+for (var j = 0; j < arr.length; j++) {
+    console.log(arr[j]());
+}
+```
+
+5만 다섯 번 출력 됨. 클로져가 반환되기 전에 이미 i 가 5로 되면서 arr[]배열에 모두 5가 들어가짐.
+
+<u>let 키워드</u>를 사용하면서 <u>클로저</u>를 사용해보자
+
+```javascript
+const arr = [];
+
+for (let i = 0; i < 5; i++) {
+    arr[i] = function () {
+        return i;
+  };
+}
+
+for (let i = 0; i < arr.length; i++) {
+    console.log(arr[i]());
+}
+```
+
+또는 함수형 프로그래밍 기법인 고차 함수를 사용해보자
+
+```javascript
+const arr = new Array(5).fill();
+
+arr.forEach((v, i, array) => array[i] = () => i);
+
+arr.forEach(f => console.log(f()));
+```
+
+
+
+#### let, const, var 차이점
+
+- `var`은 함수 레벨 스코프이고, `let`, `const`는 블럭 레벨 스코프이다.
+- `var`로 선언한 변수는 선언 전에 사용해도 에러가 나지 않지만, `let`과 `const`는 에러가 발생한다.
+- `var`, `let`은 변수 선언시 초기 값을 주지 않아도 되지만 `const`는 반드시 초기 값을 할당해야 한다.
+- [`let`과 `const` ]는 `var`과 다르게 **변수 재선언이 불가능** 하다.
+- `let`은 변수에 재할당이 가능하지만,  `const`는 변수 재선언, 재할당 모두 불가능하다.
 
