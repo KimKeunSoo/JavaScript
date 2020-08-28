@@ -1280,3 +1280,319 @@ arr.forEach(f => console.log(f()));
 - [`let`과 `const` ]는 `var`과 다르게 **변수 재선언이 불가능** 하다.
 - `let`은 변수에 재할당이 가능하지만,  `const`는 변수 재선언, 재할당 모두 불가능하다.
 
+
+
+#### setTimeout()에 지정되는 함수의 사용자 정의
+
+```javascript
+function callLater(obj, a, b) {
+  return function () {
+    obj["sum"] = a + b;
+    console.log(obj["sum"]);
+  };
+}
+
+var sumObj = {
+  sum: 0,
+};
+
+var func = callLater(sumObj, 1, 2);
+setTimeout(func, 500);
+```
+
+setTimeout() 함수의 첫번째 인자 : 함수, 두번째 인자 ; 밀리 초 단위 숫자만큼의 시간 간격으로 해당 함수 호출
+
+
+
+#### 루프 안에서 클로저 및 let 사용 (setTimeout 사용법)
+
+```javascript
+function countSeconds(howMany){
+    for(let i = 1; i <= howMany; i++){
+        setTimeout(function(){
+            console.log(i);
+        }, i * 1000);
+    }
+};
+countSeconds(3);
+```
+
+
+
+
+
+# 6 장
+
+## 객체 지향 프로그래밍
+
+```javascript
+function Person(arg){
+    this.name = arg;
+    this.getName = function(){
+        return this.name;
+    }
+    this.setName = function(value){
+        this.name = value;
+    }
+}
+var me = new Person("KeunSoo");
+console.log(me.getName());	// KeunSoo
+
+me.setName("KS");
+console.log(me.getName());	// KS
+```
+
+함수 Person이 클래스이자 생성자의 역할을 함. `var me = new Person("me")`, `var you = new Person("you")` 이런식으로 여러 객체 생성이 가능하고 잘 동작을 하나 이는 불필요하게 중복되는 영역을 메모리에 올려놓고 사용함. 이를 해결하기 위해 함수의 프로토타입 객체를 사용함
+
+```javascript
+function Person(arg){
+    this.name = arg;
+}
+Person.prototype.getName = function(){
+    return this.name;
+}
+Person.prototype.setName = function(value){
+    this.name = value;
+}
+
+var me = new Person("me");
+var you = new Person("you");
+console.log(me.getName());		// me
+console.log(you.getName());		// you
+```
+
+메서드를 정의하는 방법으로 최종적으로 구성한다면,
+
+```javascript
+Function.prototype.method = function(name, func){
+    this.prototype[name] = func;
+}
+
+function Person(arg){
+    this.name = arg;
+}
+Person.method("setName",function(value){
+    this.name = value;
+});
+Person.method("getName",function(){
+    return this.name;
+});
+
+var me = new Person("me");
+var you = new Person("you");
+console.log(me.getName());		// me
+console.log(you.getName());		// you
+```
+
+
+
+## 상속
+
+자바스크립트는 클래스를 기반으로 하는 전통적인 상속을 지원하지 않는다. 하지만 객체 프로토타입 체인을 이용하여 상속을 구현해낼 수 있다.
+
+1. 클래스 개념 없이 객체의 프로토타입으로 상속을 구현 - 프로토타입을 이용한 상속(Prototypal Inheritance)
+2. 클래스 기반 전통적인 상속 방식 흉내
+
+
+
+#### 프로토타입을 이용한 상속
+
+ECMAScript 5에서 `Object.create()`함수로 제공됨. 이런 함수를 풀어보면
+
+```javascript
+function create_object(o){
+    function F(){}
+    F.prototype = o;
+    return new F();
+}
+```
+
+빈 함수 객체 F를 만들고, F.prototype 프로퍼티에 인자로 들어온 객체(o)를 참조하고, 함수 객체 F를 생성자로 하는 새로운 객체를 만들어 반환한다.
+
+
+
+`Object.create()`를 사용하여 구현하면,
+
+```javascript
+var person = {
+    name : "keunsoo",
+    getName : function(){
+        return this.name;
+    },
+    setName : function(arg){
+        this.name = arg;
+    }
+};
+
+var student = Object.create(person);
+
+student.setName("me");
+console.log(student.getName());	//	me
+```
+
+
+
+지금까지는 부모 객체의 메서드를 그대로 상속받아 사용하는 방법. 하지만 여기에서 자식은 자신의 메서드를 동적 추가 또는 확장 가능해야함.
+
+```javascript
+student.setAge = function(age){ . . . }
+student.getAge = function(){ . . . }
+```
+
+요런식으로 확장시킬 수는 있으나 코드가 지저분해짐. 
+
+
+
+jQuery의 extend() 함수를 풀어보면,
+
+```javascript
+jQuery.extend = jQuery.fn.extend = function(obj, prop){
+    if(!prop) {prop = obj; obj = this;}
+    for(var i in prop) obj[i] = prop[i];
+    return obj;
+};
+```
+
+`jQuery.fn`은 `jQuery.prototype`이다. 따라서 첫줄은 jQuery 함수 객체와 jQuery 함수 객체의 인스턴스 모두 extend 함수에 넣겠다라는 의미.  즉, `jQuery.extend()`로 호출할 수도 있고, `var elem = new jQuery(..); elem.extend();`의 형태로도 호출할 수 있음.
+
+두번째 줄은 extend 함수 인자가 하나만 들어오는 경우에는 현재 객체(this)에 인자로 들어오는 객체의 프로퍼티를 복사함을 의미, 두개가 들어오는 경우에는 첫 번째 객체에 두번째 객체의 프로퍼티를 복사하겠다는 것을 뜻한다.
+
+세번째 줄은 루프를 돌면서 prop의 프로퍼티를 obj로 복사한다.
+
+
+
+이제 extend()함수를 사용하여 작성하면,
+
+```javascript
+var person = {
+    name : "keunsoo",
+    getName : function(){
+        return this.name;
+    },
+    setName : function(arg){
+        this.name = arg;
+    }
+};
+
+var student = Object.create(person);
+var added = {
+    setAge : function(age){
+        this.age = age;
+    },
+    getAge : function(){
+        return this.age;
+    }
+};
+extend(student, added);
+
+student.setAge(25);
+console.log(student.getAge());
+```
+
+최종적으로 Person의 객체에는 name, setName, getName  프로퍼티가 있고 Person을 Prototype을 이용한 상속을 한 Student의 객체에는 age, setAge, getAge 프로퍼티가 있다.
+
+
+
+#### 클래스 기반의 상속
+
+```javascript
+function Person(arg){
+    this.name = arg;
+}
+Person.prototype.setName = function(vlaue){
+    this.name = value;
+};
+Person.prototype.getName = function(){
+    return this.name;
+};
+function Student(arg){
+}
+
+var you = new Person("Justin");
+Student.prototype = you;
+
+var me = new Student("KeunSoo");
+me.setName =("KeunSoo");
+console.log(me.getName());
+```
+
+![image-20200828172042266](README%20assets/image-20200828172042266.png)
+
+결국 생성된 me객체는 빈 객체임.  마지막 두번째 setName이 호출되어야 me객체에 name 프로퍼티가 만들어짐. 이렇게 부모의 생성자가 호출되지 않으면 안됨. 따라서 Student함수를 수정한다.
+
+```javascript
+function Person(arg){
+    this.name = arg;
+}
+Person.prototype.setName = function(vlaue){
+    this.name = value;
+};
+Person.prototype.getName = function(){
+    return this.name;
+};
+function Student(arg){
+    Person.apply(this, arguments)
+}
+
+var you = new Person("Justin");
+Student.prototype = you;
+
+var me = new Student("KeunSoo");
+me.setName =("KeunSoo");
+console.log(me.getName());
+```
+
+STudent 함수 안에서 새롭게 생성된 객체를 `apply()` 함수의 첫 번째 인자로 넘겨 Person 함수를 실행시킨다. 하지만 이또한 부모 클래스의 인스턴스와 자식 클래스의 인스턴스는 서로 독립적일 필요가 있다. 두 클래스 프로토타입 사이에 중개자를 하나 만들어보자.
+
+
+
+```javascript
+function Person(arg){
+    this.name = arg;
+}
+Function.prototype.method = function(name, func){
+    this.prototype[name] = func;
+}
+Person.method("setName", function(value){
+    this.name = value;
+});
+Person.method("getName", function(){
+    return this.name;
+});
+function Student(arg){
+}
+function F(){};
+
+F.prototype = person.prototype;
+Student.prototype = new F();
+Student.prototype.constructor = Student;
+Student.super = Person.prototype;
+
+var me = new Student();
+me.setName("keunsoo");
+console.lgo(me.getName());
+```
+
+![image-20200828175111684](README%20assets/image-20200828175111684.png)
+
+빈 함수의 객체를 중간에 두어 Person과 Student를 독립적으로 생성함.
+
+상속관계를 즉시 실행 함수와 클로저를 활용한 최적화된 함수
+
+```javascript
+var inherit = function(Parent, Child){
+    var F = function(){};
+    return function(Parent, Child){
+        F.prototype = Parent.prototype;
+        Child.prototype = new F();
+        Child.prototype.constructor = Child;
+        Child.super = Parent.prototype;
+    };
+}();
+```
+
+
+
+# 7 장
+
+## 함수형 프로그래밍

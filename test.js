@@ -1,33 +1,15 @@
-function HelloFunc() {
-  this.greeting = "hello";
-}
-
-HelloFunc.prototype.call = function (func) {
-  func ? func(this.greeting) : this.func(this.greeting);
+var person = {
+  name: "keunsoo",
+  getName: function () {
+    return this.name;
+  },
+  setName: function (arg) {
+    this.name = arg;
+  },
 };
 
-var userFunc = function (greeting) {
-  console.log(greeting);
-};
+var student = Object.create(person);
 
-var objHello = new HelloFunc();
-objHello.func = userFunc;
-objHello.call();
+student.setName("me");
 
-function saySomething(obj, methodName, name) {
-  return function (greeting) {
-    return obj[methodName](greeting, name);
-  };
-}
-
-function newObj(obj, name) {
-  obj.func = saySomething(this, "who", name);
-  return obj;
-}
-
-newObj.prototype.who = function (greeting, name) {
-  console.log(greeting + " " + (name || "everyone"));
-};
-
-var obj1 = new newObj(objHello, "zzoon");
-obj1.call();
+console.log(student.getName()); //	me
