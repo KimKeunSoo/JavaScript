@@ -700,13 +700,26 @@ console.log(global.value);	//undefined
 
 상황에 따른 내부적인 this 바인딩이 아닌 특정 객체에 명시적으로 바인딩을 하게 해주는 함수 객체의 기본 프로퍼티인 `apply()` `call()`메서드는 기능이 같고 넘겨받는 인자의 형식만 다름.
 
+
+
 ```javascript
 function.apply(thisArg, argArray)
 ```
 
-- `apply()`메서드를 호출하는 주체는 함수.
+`apply()`함수는 매게 변수를 **배열**, `argArray`로 받는다.
+
 - 첫번째 인자 `thisArg`는 호출하는 함수 내부에서 사용한 this에 바인딩할 객체를 가르킴.
 - 두번째 인자 `argArray`는 함수를 호출할 때 넘길 인자들의 배열을 가르킴.
+
+```javascript
+function.call(thisArg, argParameter1, argParameter2, ... )
+```
+
+`call()`함수는 매게 변수를 **직접**,  받는다.
+
+- 첫번째 인자 `thisArg`는 호출하는 함수 내부에서 사용한 this에 바인딩할 객체를 가르킴.
+- 두번째 인자 `argParameter`는 함수를 호출할 때 넘길 인자들을 직접 가르킴.
+- 
 
 ```javascript
 //생성자 함수로 객체 생성
@@ -1319,6 +1332,10 @@ countSeconds(3);
 
 
 
+https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Closures
+
+클로저 상세하게 설명된 곳
+
 
 
 # 6 장
@@ -1596,3 +1613,148 @@ var inherit = function(Parent, Child){
 # 7 장
 
 ## 함수형 프로그래밍
+
+
+
+**명령형 프로그래밍**으로 짠 javascript 코드  - 배열의 각 원소 총합&총곱 구하기
+
+```javascript
+function sum(arr){
+    var len = arr.length;
+    var i = 0, sum = 0;
+    for(;i<len;i++){
+        sum += arr[i];
+    }
+    return sum;
+};
+function multiply(arr){
+    var len = arr.length;
+    var i = 0, result = 1;
+    for(;i<len;i++){
+        result *= arr[i];
+    }
+    return result;
+};
+var arr = [1,2,3,4];
+console.log(sum(arr));
+console.log(multiply(arr));
+```
+
+
+
+**함수형 프로그래밍**으로 짠 javascript 코드   - 배열의 각 원소 총합&총곱 구하기
+
+```javascript
+function reduce(func, arr, memo){
+    var len = arr.length,
+        i = 0,
+        accum = memo;
+    for(;i<len;i++){
+        accum = func(accum, arr[i]);
+    }
+    return accum;
+}
+var arr = [1,2,3,4];
+var sum = function(x,y){
+    return x+y;
+};
+var multiply = function(x,y){
+    return x*y;
+};
+console.log(reduce(sum, arr, 0));
+console.log(reduce(multiply, arr, 1));
+```
+
+
+
+**명령형 프로그래밍**으로 짠 javascript 코드 - 팩토리얼 연산
+
+```javascript
+function fact(num){
+    if(num == 0) return 1;
+    else return num * fact(num-1);
+}
+console.log(fact(100));
+```
+
+이렇게 짜면 처음 10! 실행후 20!을 실행하려면 그전 구문을 <u>다시 중복하여 계산하므로 캐시에 저장하여 연산한다면 성능 향상에 도움 됨</u>
+
+
+
+**함수형 프로그래밍**으로 짠 javascript 코드 - 팩토리얼 연산
+
+```javascript
+var fact = function(){
+    var cache = {'0' : 1};
+    var func = function(n){
+        var result = 0;
+        
+        if(typeof(cache[n]) === 'number'){
+            result = cache[n];
+        }else{
+            result = cache[n] = n * func(n-1);
+        }
+        return result;
+    }
+    return func;
+}();
+
+console.log(fact(10));
+```
+
+
+
+**함수형 프로그래밍**으로 짠 javascript 코드 - 피보나치 수열
+
+```javascript
+var fibo = function(){
+    var cache = {'0' : 0, '1' : 1};
+    
+    var func = function(n){
+        if(typeof(cache[n]) === 'number'){
+            result = cache[n];
+        }else{
+            result = cache[n] = func(n-1) + func(n-2);
+        }
+        return result;
+    }
+    return func;
+}();
+
+console.log(fibo(10));
+```
+
+
+
+팩토리얼 연산과 피보나치 연산을 계산하는 함수를 인자로 받는 함수
+
+```javascript
+var cacher = function(cache, func1){
+  var calculate = function(n){
+      if(typeof(cache[n]) === 'number'){
+          result = cache[n]
+      }
+      else{
+          result = cache[n] = func1(caclulate, n)
+      }
+      return result;
+  }
+  return result;
+};
+
+var fact = cacher({ '0' : 1 }, function(func2, n2){
+  return n2 * func2(n2-1);
+});
+
+var fibo = cahcer({ '0' : 0 , '1' : 1 }, function(func3, n3){
+  return func3(n3-1) + func3(n3-2);
+});
+
+console.log(fact(10));
+console.log(fibo(10));
+```
+
+
+
+
+
