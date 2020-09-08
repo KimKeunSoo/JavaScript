@@ -1756,5 +1756,89 @@ console.log(fibo(10));
 
 
 
+## 함수형 프로그래밍을 활용한 주요 함수
+
+### 1. 커링
+
+커링이란, 특정 함수에서 <u>정의된 인자의 일부를 넣어 고정</u>시키고, <u>나머지를 인자로 받는 새로운 함수</u>를 만드는 것을 의미한다.
+
+```javascript
+function calculate(a,b,c){
+    return a*b+c;
+}
+
+function curry(func){
+    var args = Array.prototype.slice.call(arguments, 1);
+    
+    return function(){
+        return func.apply(null, args.concat(Array.prototype.slice.call(arguments)));
+    }
+}
+
+var new_func1 = curry(calculate, 1);
+console.log(new_func1(2,3));	//출력값 5 // 1*2+3=5
+
+var new_func2 = curry(calculate, 1, 3);
+console.log(new_func2(3));		//출력값 6 // 1*3+3=6
+```
 
 
+
+(calculate, 1) 을 넘기고 curry로 인해 (calculate) [1 * b + c ]를 하는 b 와 c를 인자로 받는 새로운 함수
+
+(calculate, 1, 3) 을 넘기고 curry로 인해 (calculate) [ 1 * 3 + c]를 하는 c를 인자로 받는 새로운 함수
+
+
+
+`curry()`함수의 역할은 넘어온 인자들을 `args`에 담아 놓고, 새로운 함수 호출로 넘어온 인자와 합쳐서 함수를 적용한다.
+
+
+
+javascript에서는 기본으로 제공하지 않아서 `Function.prototype`에 커링함수를 정의하여 사용할 수 있다.
+
+```javascript
+Function.prototype.curry = function(){
+    var fn = this,
+        args = Array.prototype.slice.call(arguments);
+    return function(){
+        return fn.apply(this, args.cocat(Array.prototype.slice.call(arguments)));
+    };
+};
+```
+
+
+
+##### `slice()`메서드
+
+`Array.protype` 에 정의되어 있는 메서드로서 인자로 첫 인덱스와 마지막 인덱스(옵션)를 주어 배열을 잘라서 복사본을 반환한다. 특히. 커링에서 함수의 인자를 arguments 객체로 조작할 때 이 메서드를 이용하여 배열로 만든 후 손쉽게 조작할 수있다.
+
+
+
+여기서 `calculate()` 함수의 첫 번째 인자와 세 번째 인자를 고정하고 싶다면?
+
+
+
+```javascript
+function calculate(a,b,c){
+    return a*b+c;
+}
+
+function curry2(func){
+    var args = Array.prototype.slice.call(arguments, 1);
+    
+    return function(){
+        var arg_idx = 0;
+        for(var i =0; i < args.length && arg_idx < arguments.length; i++)
+            if(args[i] === undefined)
+                args[i] = arguments[arg_idx++];
+        return func.apply(null, args);
+    }
+}
+
+var new_func = curry2(calculate, 1, undefined, 4);
+console.log(new_func(3));	// 출력값 7	// 1*3+4 =7
+```
+
+
+
+이와 같이 함수를 부분적으로 적용하여 새로운 함수를 반환받는 방식을 함수의 부분적용(Partially applying functions)라고 한다. 커링은 이의 대표적인 예이며 기존 함수로 인자가 비슷한 새로운 함수를 정의하여 사용하고 싶을 때 주로 씀.
